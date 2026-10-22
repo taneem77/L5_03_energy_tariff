@@ -1,4 +1,5 @@
 """Energy consumption and tariff calculator."""
+
 import json
 from datetime import datetime
 
@@ -21,11 +22,21 @@ def record_reading(meter_id, units, history=None):
 def compute_bill(meter_id, tier_rates):
     """Three-tier bill: first 100 units, next 200 units, then the rest."""
     units = METERS[meter_id]
+
     if units <= 100:
         return units * tier_rates[0]
+
     if units <= 300:
-        return 100 * tier_rates[0] + (units - 100) * tier_rates[1]
-    return 100 * tier_rates[0] + 200 * tier_rates[1] + (units - 300) * tier_rates[2]
+        return (
+            100 * tier_rates[0]
+            + (units - 100) * tier_rates[1]
+        )
+
+    return (
+        100 * tier_rates[0]
+        + 200 * tier_rates[1]
+        + (units - 300) * tier_rates[2]
+    )
 
 
 def raise_rates(percent):
@@ -36,7 +47,11 @@ def raise_rates(percent):
 
 def flag_spikes():
     """Return meter ids whose usage exceeds SPIKE_LIMIT."""
-    return [meter for meter, total in METERS.items() if total > SPIKE_LIMIT]
+    return [
+        meter
+        for meter, total in METERS.items()
+        if total > SPIKE_LIMIT
+    ]
 
 
 def load_meter_data(file="meters.json"):
@@ -46,6 +61,7 @@ def load_meter_data(file="meters.json"):
             data = json.load(handle)
     except (OSError, json.JSONDecodeError):
         data = {}
+
     METERS.clear()
     METERS.update(data)
 
@@ -59,19 +75,29 @@ def save_meter_data(file="meters.json"):
 def main():
     """Run the demo."""
     history = []
+
     record_reading("M-01", 120, history)
     record_reading("M-02", 640, history)
+
     try:
         record_reading("M-03", -50, history)
     except ValueError as err:
         print("Rejected reading for M-03:", err)
+
     print("Readings stored so far:", len(history))
 
     raise_rates(10)
-    print(f"Bill M-01: {compute_bill('M-01', RATES):.2f}")
+
+    print(
+        f"Bill M-01: {compute_bill('M-01', RATES):.2f}"
+    )
     print("Spikes:", flag_spikes())
 
-    adjustment = input("Extra units for M-01 (number, Enter for 0): ") or "0"
+    adjustment = (
+        input("Extra units for M-01 (number, Enter for 0): ")
+        or "0"
+    )
+
     try:
         record_reading("M-01", float(adjustment), history)
     except ValueError as err:
@@ -79,7 +105,11 @@ def main():
 
     save_meter_data()
     load_meter_data()
-    print(f"Bill M-01 after reload: {compute_bill('M-01', RATES):.2f}")
+
+    print(
+        f"Bill M-01 after reload: "
+        f"{compute_bill('M-01', RATES):.2f}"
+    )
 
 
 if __name__ == "__main__":
